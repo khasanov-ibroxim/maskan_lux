@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Form, Input, InputNumber, Row, Select, Button, message } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 import "./sell.css";
+import {Link} from "react-router-dom";
 
 const { Option } = Select;
 
@@ -190,6 +191,9 @@ const Sell = () => {
 
     return (
         <div className="container mt-5">
+
+            <Link to={"/table"} style={{fontSize:"40px"}}>TABLE</Link>
+
             <div className="box">
                 <div className="box_form">
                     <Form layout="vertical" form={form} onValuesChange={(_, all) => setFormData(all)}>
