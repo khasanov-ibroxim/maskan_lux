@@ -1,0 +1,8 @@
+.box{
+    width: 100%;
+    display: flex;
+    gap: 50px;
+}
+.box_form , .box_content{
+    width: 50%;
+}
