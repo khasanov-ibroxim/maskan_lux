@@ -21,7 +21,7 @@ const Login = () => {
             };
 
             localStorage.setItem("userData", JSON.stringify(userData));
-            sessionStorage.setItem("userData", JSON.stringify(userData)); // ✅ zaxira
+            sessionStorage.setItem("userData", JSON.stringify(userData));
 
             message.success(`Xush kelibsiz, ${found.username}!`);
             navigate("/");

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {Form, Input, Button, Select, message, Row, Col, DatePicker} from "antd";
+import {Form, Input, Button, Select, message, Row, Col, InputNumber} from "antd";
 import { Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import "./tableMaskan.css"
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6qXAMHjKw4Ki83ZVDVbMe1aXl19CEZcP8piM_z7VIP1_QtHhhLGmAOaIcnbiVMdQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyTCM8bQD1iriXpa16Z146_xb5K6qY11new5i78Zgli6tPMYR4kCvOejsRG6pLCC3Y/exec";
 const { Option } = Select;
 
 const formatDateToDDMMYYYY = (isoDate) => {
@@ -88,6 +88,8 @@ const TableMaskan = () => {
                     torets: values.torets || "",
                     balkon: values.balkon || "",
                     osmotir: osmotir || "",
+                    dom: values.dom || "",
+                    kvartira: values.kvartira || "",
                 }),
             });
 
@@ -233,15 +235,32 @@ const TableMaskan = () => {
                         </Form.Item>
                     </Input.Group>
                 </Form.Item>
-
+                <Row gutter={20}>
+                    <Col span={12}>
+                        <Form.Item label="Dom" name="dom" >
+                            <InputNumber max={150} style={{width:"100%"}} type={"number"} controls={false} placeholder={"1"}/>
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item label="Kvartira" name="kvartira" >
+                            <InputNumber style={{width:"100%"}} type={"number"} controls={false}/>
+                        </Form.Item>
+                    </Col>
+                </Row>
                 {/* M² */}
-                <Form.Item label="M² (Maydon)" name="m2"   rules={[{ required: true, message: "Balkon tanlang!" }]}>
+                <Form.Item label="M² (Maydon)" name="m2"  rules={[{ required: true, message: "Balkon tanlang!" }]}>
                     <Input placeholder="65" type="number" />
                 </Form.Item>
 
                 {/* Narx */}
-                <Form.Item label="Narxi (USD)" name="narx"  rules={[{ required: true, message: "Balkon tanlang!" }]}>
-                    <Input placeholder="75000" type="number" />
+                <Form.Item label="Narxi (USD)" name="narx"  rules={[{ required: true, message: "Narx yozin" }]}>
+                    <InputNumber placeholder="75000" style={{width:"100%"}}
+                                 suffix={"$"}
+                                 controls={false}
+                           formatter={(v) =>
+                        v ? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")  : ""
+                    }
+                           parser={(v) => v.replace(/\s|\$/g, "")}/>
                 </Form.Item>
                 {/* Telefon */}
                 <Form.Item
