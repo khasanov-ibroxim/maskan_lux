@@ -254,7 +254,7 @@ const TableMaskan = () => {
 
                 {/* Narx */}
                 <Form.Item label="Narxi (USD)" name="narx"  rules={[{ required: true, message: "Narx yozin" }]}>
-                    <InputNumber placeholder="75000" style={{width:"100%"}}
+                    <Input placeholder="75000" style={{width:"100%"}}
                                  suffix={"$"}
                                  controls={false}
                                  type="number"
