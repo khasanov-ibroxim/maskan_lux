@@ -254,14 +254,14 @@ const TableMaskan = () => {
 
                 {/* Narx */}
                 <Form.Item label="Narxi (USD)" name="narx"  rules={[{ required: true, message: "Narx yozin" }]}>
-                    <Input placeholder="75000" style={{width:"100%"}}
-                                 suffix={"$"}
-                                 controls={false}
-                                 type="number"
-                           formatter={(v) =>
-                        v ? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")  : ""
-                    }
-                           parser={(v) => v.replace(/\s|\$/g, "")}/>
+                    <Input
+                        placeholder="75000"
+                        style={{ width: "100%" }}
+                        suffix="$"
+                        controls={false}
+                        type="number"
+                    />
+
                 </Form.Item>
                 {/* Telefon */}
                 <Form.Item
