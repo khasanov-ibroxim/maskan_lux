@@ -259,7 +259,7 @@ const TableMaskan = () => {
                         style={{ width: "100%" }}
                         suffix="$"
                         controls={false}
-                        type="number"
+                        type="tel"
                     />
 
                 </Form.Item>
