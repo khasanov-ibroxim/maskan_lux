@@ -257,6 +257,7 @@ const TableMaskan = () => {
                     <InputNumber placeholder="75000" style={{width:"100%"}}
                                  suffix={"$"}
                                  controls={false}
+                                 type="number"
                            formatter={(v) =>
                         v ? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")  : ""
                     }
