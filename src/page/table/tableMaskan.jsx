@@ -3,7 +3,7 @@ import {Form, Input, Button, Select, message, Row, Col, InputNumber} from "antd"
 import { Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import "./tableMaskan.css"
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyTCM8bQD1iriXpa16Z146_xb5K6qY11new5i78Zgli6tPMYR4kCvOejsRG6pLCC3Y/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrl3IwR6K_C7f_UslO3P5RZeREgWSr2D17i_Ao4w3umhY17Ozm7iPDh05p13zajLNh/exec";
 const { Option } = Select;
 
 const formatDateToDDMMYYYY = (isoDate) => {
