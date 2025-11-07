@@ -249,7 +249,7 @@ const TableMaskan = () => {
                 </Row>
                 {/* M² */}
                 <Form.Item label="M² (Maydon)" name="m2"  rules={[{ required: true, message: "Balkon tanlang!" }]}>
-                    <Input placeholder="65" type="number" />
+                    <Input placeholder="65" type="tel" />
                 </Form.Item>
 
                 {/* Narx */}
