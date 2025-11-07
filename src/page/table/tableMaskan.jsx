@@ -238,12 +238,12 @@ const TableMaskan = () => {
                 <Row gutter={20}>
                     <Col span={12}>
                         <Form.Item label="Dom" name="dom" >
-                            <InputNumber max={150} style={{width:"100%"}} type={"number"} controls={false} placeholder={"1"}/>
+                            <InputNumber max={150} style={{width:"100%"}} type={"tel"} controls={false} placeholder={"1"}/>
                         </Form.Item>
                     </Col>
                     <Col span={12}>
                         <Form.Item label="Kvartira" name="kvartira" >
-                            <InputNumber style={{width:"100%"}} type={"number"} controls={false}/>
+                            <InputNumber style={{width:"100%"}} type={"tel"} controls={false}/>
                         </Form.Item>
                     </Col>
                 </Row>
@@ -325,7 +325,7 @@ const TableMaskan = () => {
 
                 {/* ID */}
                 <Form.Item label="ID" name="id">
-                    <Input placeholder="12345" type="number" />
+                    <Input placeholder="12345" type="tel" />
                 </Form.Item>
 
 
