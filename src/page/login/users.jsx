@@ -1,8 +1,8 @@
 export const users = [
-    { username: "Dovron", login: "dovron123", parol: "12345" },
+    { username: "Dovron", login: "Davron1117", parol: "24081994" },
     { username: "Xusan", login: "xusan123", parol: "12345" },
-    { username: "Aziz", login: "aziz123", parol: "12345" },
-    { username: "Doniyor", login: "doniyor123", parol: "12345" },
-    { username: "Sevinch", login: "sevinch123", parol: "12345" },
-    { username: "Ibroxim", login: "ibroxim123", parol: "12345" },
+    { username: "Aziz", login: "Raxmanv", parol: "12345" },
+    { username: "Doniyor", login: "Doniyor123", parol: "12345" },
+    { username: "Sevinch", login: "Sevinch123", parol: "12345" },
+    { username: "Ibroxim", login: "Ibroxim123", parol: "12345" },
 ];
