@@ -460,7 +460,7 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                 <Row gutter={20}>
                     <Col span={12}>
                         <Form.Item label="Dom" name="dom">
-                            <InputNumber max={150} style={{width: "100%"}} type={"tel"} controls={false}
+                            <InputNumber  style={{width: "100%"}} type={"tel"} controls={false}
                                          placeholder={"1"}/>
                         </Form.Item>
                     </Col>
@@ -566,6 +566,8 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         <Option value="Panel">Panel</Option>
                         <Option value="Beton">Beton</Option>
                         <Option value="Monolitniy/B">Monolitniy/B</Option>
+                        <Option value="Gaza/b">Gaza/b</Option>
+                        <Option value="Pena/b">Pena/b</Option>
                         <Option value="Boshqa">Boshqa</Option>
                     </Select>
                 </Form.Item>
@@ -575,6 +577,10 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         <Option value="Tashkent">Tashkent</Option>
                         <Option value="Fransuzkiy">Fransuzkiy</Option>
                         <Option value="Uluchshiniy 2ta zal">Uluchshiniy+2 ta zal</Option>
+                        <Option value="Uluchshiniy">Uluchshiniy</Option>
+                        <Option value="Galareyka">Galareyka</Option>
+                        <Option value="Navastroyka">Navastroyka</Option>
+                        <Option value="Xrushovka">Xrushovka</Option>
                         <Option value="Boshqa">Boshqa</Option>
                     </Select>
                 </Form.Item>
@@ -584,6 +590,7 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         <Option value="Kapitalniy">Kapitalniy</Option>
                         <Option value="Ortacha">Ortacha</Option>
                         <Option value="Toza">Toza</Option>
+                        <Option value="Yevro remont">Yevro remont</Option>
                         <Option value="Kosmetichiskiy">Kosmetichiskiy</Option>
                         <Option value="Bez remont">Bez remont</Option>
                     </Select>
@@ -607,6 +614,8 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         <Option value="1x7">1x7</Option>
                         <Option value="2x4.5 + 1x1.5">2x4.5 + 1x1.5</Option>
                         <Option value="2x9">2x9</Option>
+                        <Option value="Yo'q">Yo'q</Option>
+                        <Option value="Boshqa">Boshqa</Option>
                     </Select>
                 </Form.Item>
 
