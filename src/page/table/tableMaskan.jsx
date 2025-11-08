@@ -5,7 +5,7 @@ import {InboxOutlined} from "@ant-design/icons";
 import axios from "axios";
 import "./tableMaskan.css"
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLZ-iJdrclryKJQNC8kiSXcwo5Js7r5bnmeN32G6ZU4eEs9PC8EuZ_z4-spnXE4f2a/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeyjxEQ-3pXxmU41EDdkbtog9Flo-4h85_1IA54PGQ0Jjz1ugxj7S0bon3J_br1k9z/exec";
 const TOKEN = "8504311369:AAEMh3ohupPdRaX1Qx61MpZ9jf3mIdhsTKA"; // ❗ Bu yerga bot tokenni qo'ying
 const {Option} = Select;
 import {Rielter} from "./db/rielter.jsx";
