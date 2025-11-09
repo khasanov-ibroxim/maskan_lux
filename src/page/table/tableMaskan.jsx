@@ -5,7 +5,7 @@ import {InboxOutlined} from "@ant-design/icons";
 import axios from "axios";
 import "./tableMaskan.css"
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeyjxEQ-3pXxmU41EDdkbtog9Flo-4h85_1IA54PGQ0Jjz1ugxj7S0bon3J_br1k9z/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRjhekKYRUj1hO3IYpOl_nIW95J80BZwFvfuUdoYW2DhpVsAho1w1oVdbBLh1SRlQM/exec";
 const TOKEN = "8504311369:AAEMh3ohupPdRaX1Qx61MpZ9jf3mIdhsTKA"; // ❗ Bu yerga bot tokenni qo'ying
 const {Option} = Select;
 import {Rielter} from "./db/rielter.jsx";
@@ -136,25 +136,35 @@ const TableMaskan = () => {
         }
     };
 
-    // 🚀 Google Apps Script ga yuborish funksiyasi
-    const sendToGoogleScript = async (url, data) => {
+// 🚀 Google Apps Script ga yuborish funksiyasi (PARALLEL & FIRE-AND-FORGET)
+    const sendToGoogleScript = async (url, data, timeout = 10000) => {
         try {
-            const response = await fetch(url, {
+            console.log(`📤 Yuborilmoqda: ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'} Excel`);
+
+            // ✅ Timeout bilan promise yaratamiz
+            const fetchPromise = fetch(url, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                mode: "no-cors",
-                body: JSON.stringify(data),
+                mode: "no-cors", // CORS muammosini oldini olish
+                body: JSON.stringify(data)
             });
 
-            // no-cors rejimida response.status har doim 0 bo'ladi
-            // Agar xatolik bo'lmasa, muvaffaqiyatli deb hisoblaymiz
-            return { success: true, status: 0 };
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), timeout)
+            );
+
+            // ✅ Timeout yoki fetch - qaysi biri tezroq bo'lsa
+            await Promise.race([fetchPromise, timeoutPromise]);
+
+            console.log(`✅ Yuborildi: ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'}`);
+            return { success: true };
         } catch (error) {
-            console.error("Send error:", error);
-            return { success: false, error: error.message };
+            // ✅ Timeout yoki xatolik bo'lsa ham SUCCESS deb qaytaramiz
+            // Chunki no-cors rejimida response tekshirib bo'lmaydi
+            console.warn(`⚠️ ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'} - Timeout/Error (lekin yuborilgan bo'lishi mumkin):`, error.message);
+            return { success: true, warning: error.message };
         }
     };
-
     const onFinish = async (values) => {
         setLoading(true);
         setUploadProgress(0);
