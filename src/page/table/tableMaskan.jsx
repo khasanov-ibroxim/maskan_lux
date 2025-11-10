@@ -5,7 +5,7 @@ import {InboxOutlined} from "@ant-design/icons";
 import axios from "axios";
 import "./tableMaskan.css"
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOKPQvZtPoRdA3gx8uXpspl5JhJmUkpbBWZEfnZeti2RuwbGZRNqMdU5Hm4f5PV2xz/exec/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZt7M13R183MYZfThyGPeYecqGddwrNOqT1xhTmYiPM8nmz4hPQNSvLrajLArxzv00/exec";
 const {Option} = Select;
 import {Rielter} from "./db/rielter.jsx";
 
