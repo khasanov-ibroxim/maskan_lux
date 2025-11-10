@@ -5,8 +5,7 @@ import {InboxOutlined} from "@ant-design/icons";
 import axios from "axios";
 import "./tableMaskan.css"
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRjhekKYRUj1hO3IYpOl_nIW95J80BZwFvfuUdoYW2DhpVsAho1w1oVdbBLh1SRlQM/exec";
-const TOKEN = "8504311369:AAEMh3ohupPdRaX1Qx61MpZ9jf3mIdhsTKA"; // ❗ Bu yerga bot tokenni qo'ying
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOKPQvZtPoRdA3gx8uXpspl5JhJmUkpbBWZEfnZeti2RuwbGZRNqMdU5Hm4f5PV2xz/exec/exec";
 const {Option} = Select;
 import {Rielter} from "./db/rielter.jsx";
 
@@ -15,19 +14,6 @@ const formatDateToDDMMYYYY = (isoDate) => {
     const parts = isoDate.split("-");
     if (parts.length !== 3) return isoDate;
     return `${parts[2]}-${parts[1]}-${parts[0]}`;
-};
-
-// Base64 ni Blob ga o'girish
-const base64ToBlob = (base64) => {
-    const parts = base64.split(';base64,');
-    const contentType = parts[0].split(':')[1];
-    const raw = window.atob(parts[1]);
-    const rawLength = raw.length;
-    const uInt8Array = new Uint8Array(rawLength);
-    for (let i = 0; i < rawLength; ++i) {
-        uInt8Array[i] = raw.charCodeAt(i);
-    }
-    return new Blob([uInt8Array], { type: contentType });
 };
 
 const TableMaskan = () => {
@@ -53,12 +39,10 @@ const TableMaskan = () => {
         }
     }, [form]);
 
-    // 🚀 Rieltor ma'lumotlarini topish funksiyasi
     const findRielterData = (rielterName) => {
         return Rielter.find(r => r.name === rielterName);
     };
 
-    // 🚀 Upload progress simulyatsiyasi
     const simulateProgress = (duration) => {
         return new Promise((resolve) => {
             let progress = 0;
@@ -73,70 +57,6 @@ const TableMaskan = () => {
         });
     };
 
-    // 🚀 Telegram ga yuborish funksiyasi
-    const sendToTelegram = async (chatId, messageText, images = [], messageThreadId = null) => {
-        try {
-            if (!chatId) return { success: false, error: "Chat ID yo'q" };
-
-            const config = {};
-            if (images.length === 0) {
-                // Faqat matn
-                const body = {
-                    chat_id: chatId,
-                    text: messageText,
-                    parse_mode: "HTML",
-                };
-                if (messageThreadId) body.message_thread_id = messageThreadId;
-                await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, body);
-                return { success: true };
-            } else if (images.length === 1) {
-                // Bitta rasm
-                const formData = new FormData();
-                formData.append('chat_id', chatId);
-                formData.append('caption', messageText);
-                formData.append('parse_mode', 'HTML');
-                formData.append('photo', base64ToBlob(images[0]), 'photo.jpg');
-                if (messageThreadId) formData.append('message_thread_id', messageThreadId);
-
-                await axios.post(
-                    `https://api.telegram.org/bot${TOKEN}/sendPhoto`,
-                    formData,
-                    { headers: { 'Content-Type': 'multipart/form-data' } }
-                );
-                return { success: true };
-            } else {
-                // Ko'p rasmlar (media group)
-                const formData = new FormData();
-                formData.append('chat_id', chatId);
-
-                const media = images.map((_, idx) => ({
-                    type: "photo",
-                    media: `attach://photo${idx}`,
-                    caption: idx === 0 ? messageText : undefined,
-                    parse_mode: idx === 0 ? "HTML" : undefined,
-                }));
-
-                formData.append('media', JSON.stringify(media));
-                images.forEach((img, idx) => {
-                    formData.append(`photo${idx}`, base64ToBlob(img), `photo${idx}.jpg`);
-                });
-
-                if (messageThreadId) formData.append('message_thread_id', messageThreadId);
-
-                await axios.post(
-                    `https://api.telegram.org/bot${TOKEN}/sendMediaGroup`,
-                    formData,
-                    { headers: { 'Content-Type': 'multipart/form-data' } }
-                );
-                return { success: true };
-            }
-        } catch (error) {
-            console.error("Telegram xato:", error);
-            return { success: false, error: error.message };
-        }
-    };
-
-// 🚀 Google Apps Script ga yuborish funksiyasi (PARALLEL & FIRE-AND-FORGET)
     const sendToGoogleScript = async (url, data, timeout = 10000) => {
         try {
             console.log(`📤 Yuborilmoqda: ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'} Excel`);
@@ -170,12 +90,10 @@ const TableMaskan = () => {
         setUploadProgress(0);
 
         try {
-            // Progress simulyatsiyasini boshlash
             const progressPromise = simulateProgress(2000);
 
             const xet = `${values.xona}/${values.etaj}/${values.etajnost}`;
 
-            // localStorage dan username ni olish
             const userData = localStorage.getItem("userData");
             let xodim = "";
             if (userData) {
@@ -196,7 +114,11 @@ const TableMaskan = () => {
                 osmotir = (sana + (sana && vaqt ? " " : "") + vaqt).trim();
             }
 
-            // Yuborilishi kerak bo'lgan ma'lumotlar
+            const now = new Date();
+            const currentDateTime = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+            const rielterData = findRielterData(values.rieltor);
+
             const dataToSend = {
                 sheetName: values.sheetName,
                 sheetType: values.sheetType,
@@ -209,7 +131,7 @@ const TableMaskan = () => {
                 fio: values.fio || "",
                 id: values.id || "",
                 rieltor: values.rieltor,
-                sana: new Date().toLocaleDateString('ru-RU'),
+                sana: currentDateTime,
                 xodim: xodim,
                 rasmlar: values.rasmlar || [],
                 uy_turi: values.uy_turi || "",
@@ -220,99 +142,70 @@ const TableMaskan = () => {
                 osmotir: osmotir || "",
                 dom: values.dom || "",
                 kvartira: values.kvartira || "",
+                // Telegram ma'lumotlari (faqat App Script uchun)
+                telegram: rielterData ? {
+                    chatId: rielterData.rielterChatId,
+                    themeId: rielterData.themeId
+                } : null
             };
 
             console.log("📤 Yuborilayotgan data:", {
                 ...dataToSend,
+                telegram: dataToSend.telegram,
                 rasmlar: `${dataToSend.rasmlar.length} ta rasm`
             });
 
-            // Progress 50% ga yetguncha kutamiz
             await progressPromise;
-            setUploadProgress(50);
+            setUploadProgress(40);
 
-            // 1️⃣ Asosiy Excel-ga yuborish
-            console.log("📊 Asosiy Excel-ga yuborilmoqda...");
+            // 1️⃣ GLAVNIY Excel-ga yuborish (birinchi bo'lib)
+            console.log("📊 GLAVNIY Excel-ga yuborilmoqda...");
             const mainResult = await sendToGoogleScript(SCRIPT_URL, dataToSend);
 
+            setUploadProgress(65);
+
             if (!mainResult.success) {
-                throw new Error("Asosiy Excel-ga yuborishda xatolik");
+                throw new Error(`GLAVNIY Excel xato: ${mainResult.error}`);
             }
 
-            setUploadProgress(70);
-            console.log("✅ Asosiy Excel-ga yuborildi");
+            console.log("✅ GLAVNIY Excel-ga yuborildi");
 
-            // 2️⃣ Rieltor Excel-iga yuborish
-            const rielterData = findRielterData(values.rieltor);
+            // 2️⃣ Rieltor Excel-iga yuborish (ikkinchi bo'lib)
+            let rielterSuccess = false;
 
             if (rielterData && rielterData.rielterExcelId) {
                 console.log(`📊 ${values.rieltor} Excel-iga yuborilmoqda...`);
-                console.log("Rielter URL:", rielterData.rielterExcelId);
+                setUploadProgress(75);
 
                 const rielterResult = await sendToGoogleScript(
                     rielterData.rielterExcelId,
                     dataToSend
                 );
 
+                setUploadProgress(90);
+
                 if (!rielterResult.success) {
-                    console.warn("⚠️ Rieltor Excel-iga yuborishda xatolik:", rielterResult.error);
+                    console.warn("⚠️ Rieltor Excel xato:", rielterResult.error);
+                    message.warning(`⚠️ ${values.rieltor} Excel-iga yuborishda xatolik`);
                 } else {
-                    console.log(`✅ ${values.rieltor} Excel-iga yuborildi`);
+                    console.log(`✅ ${values.rieltor} Excel-iga yuborildi (Telegram ham yuborildi)`);
+                    rielterSuccess = true;
                 }
             } else {
                 console.warn("⚠️ Rieltor ma'lumotlari topilmadi:", values.rieltor);
             }
 
-            setUploadProgress(85);
-
-            // 3️⃣ Telegram ga yuborish
-            if (rielterData && rielterData.rielterChatId) {
-                console.log(`📱 ${values.rieltor} Telegram kanaliga yuborilmoqda...`);
-
-                // Telegram uchun xabar yaratish
-                const telegramMessage = `
-🏠 <b>Yangi uy ma'lumoti</b>
-
-📍 <b>Kvartil:</b> ${values.kvartil}
-🏢 <b>X/E/ET:</b> ${xet}
-📏 <b>Maydon:</b> ${values.m2} m²
-💰 <b>Narxi:</b> ${values.narx} $
-📞 <b>Telefon:</b> ${values.tell}
-${values.fio ? `👤 <b>Ega:</b> ${values.fio}` : ''}
-${values.uy_turi ? `🏗 <b>Uy turi:</b> ${values.uy_turi}` : ''}
-${values.xolati ? `🔧 <b>Holati:</b> ${values.xolati}` : ''}
-${values.opisaniya ? `📝 <b>Izoh:</b> ${values.opisaniya}` : ''}
-${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
-
-👨‍💼 <b>Rieltor:</b> ${values.rieltor}
-📅 <b>Sana:</b> ${new Date().toLocaleDateString('ru-RU')}
-                `.trim();
-
-                const telegramResult = await sendToTelegram(
-                    rielterData.rielterChatId,
-                    telegramMessage,
-                    values.rasmlar || [],
-                    rielterData.themeId
-                );
-
-                if (!telegramResult.success) {
-                    console.warn("⚠️ Telegramga yuborishda xatolik:", telegramResult.error);
-                } else {
-                    console.log(`✅ ${values.rieltor} Telegram kanaliga yuborildi`);
-                }
-            } else {
-                console.warn("⚠️ Rieltor chat ID topilmadi:", values.rieltor);
-            }
-
             setUploadProgress(100);
 
-            // Muvaffaqiyatli xabar
-            message.success("✅ Ma'lumot muvaffaqiyatli yuborildi!");
+            // Muvaffaqiyat xabari
+            if (rielterSuccess) {
+                message.success("✅ Barcha ma'lumotlar muvaffaqiyatli yuborildi!");
+            } else {
+                message.success("✅ GLAVNIY Excel-ga saqlandi!");
+            }
 
-            // Formani tozalash
             form.resetFields();
 
-            // Saqlangan sheet nomini qayta o'rnatish
             const savedSheet = localStorage.getItem("selectedSheetName");
             const savedSheetType = localStorage.getItem("selectedSheetType");
             if (savedSheet) {
@@ -322,7 +215,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                 });
             }
 
-            // Progressni tozalash
             setTimeout(() => {
                 setUploadProgress(0);
             }, 2000);
@@ -359,10 +251,7 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
         >
             <h2 style={{textAlign: "center", marginBottom: 20}}>🏠 Uy ma'lumotlari</h2>
 
-
-
             <Form form={form} autoComplete="off" layout="vertical" onFinish={onFinish}>
-                {/* Sotuv yoki arenda */}
                 <Form.Item
                     label="Sotuv yoki arenda"
                     name="sheetType"
@@ -374,7 +263,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Select>
                 </Form.Item>
 
-                {/* Xona turi */}
                 <Form.Item
                     label="Xona turi"
                     name="sheetName"
@@ -389,7 +277,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Select>
                 </Form.Item>
 
-                {/* Kvartil */}
                 <Form.Item
                     label="Kvartil"
                     name="kvartil"
@@ -411,7 +298,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Select>
                 </Form.Item>
 
-                {/* X/E/ET */}
                 <Form.Item label="X/E/ET (xona / etaj / etajnist)" required>
                     <Input.Group compact style={{display: "flex", gap: 8, alignItems: "center"}}>
                         <Form.Item
@@ -470,7 +356,7 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                 <Row gutter={20}>
                     <Col span={12}>
                         <Form.Item label="Dom" name="dom">
-                            <InputNumber  style={{width: "100%"}} type={"tel"} controls={false}
+                            <InputNumber style={{width: "100%"}} type={"tel"} controls={false}
                                          placeholder={"1"}/>
                         </Form.Item>
                     </Col>
@@ -481,13 +367,11 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Col>
                 </Row>
 
-                {/* M² */}
                 <Form.Item label="M² (Maydon)" name="m2" rules={[{required: true, message: "Maydon kiriting!"}]}>
                     <Input placeholder="65" type="tel"/>
                 </Form.Item>
 
-                {/* Narx */}
-                <Form.Item label="Narxi (USD)" name="narx" rules={[{required: true, message: "Narx yozing!"}]}>
+                <Form.Item label={`Narxi (USD)`} name="narx" rules={[{required: true, message: "Narx yozing!"}]}>
                     <Input
                         placeholder="75000"
                         style={{ width: "100%" }}
@@ -495,17 +379,15 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         suffix={"$"}
                         value={form.getFieldValue("narx")}
                         onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, ""); // faqat raqam qoldiramiz
+                            let value = e.target.value.replace(/\D/g, "");
                             if (!value) value = "";
 
-                            // Raqamlarni formatlash (1 000, 10 000)
                             const formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                             form.setFieldsValue({ narx: formatted });
                         }}
                     />
                 </Form.Item>
 
-                {/* Telefon */}
                 <Form.Item
                     label="Telefon raqami"
                     name="tell"
@@ -555,17 +437,14 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Select>
                 </Form.Item>
 
-                {/* Opisaniya */}
                 <Form.Item label="Primichaniya (Izohlash)" name="opisaniya">
                     <Input.TextArea placeholder="Remont yaxshi, mebel bor..." rows={3}/>
                 </Form.Item>
 
-                {/* F.I.O */}
                 <Form.Item label="F.I.O (Egasining ismi)" name="fio">
                     <Input placeholder="Aliyev Vali"/>
                 </Form.Item>
 
-                {/* ID */}
                 <Form.Item label="ID" name="id">
                     <Input placeholder="12345" type="tel"/>
                 </Form.Item>
@@ -629,7 +508,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </Select>
                 </Form.Item>
 
-                {/* Osmotir vaqti */}
                 <Form.Item label="Osmotir vaqti" style={{marginBottom: 8}}>
                     <div className="osmotir-row">
                         <Form.Item name="osmotir_sana" noStyle>
@@ -651,7 +529,6 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                     </div>
                 </Form.Item>
 
-
                 <Row justify="center">
                     <Col span={20}>
                         <Button
@@ -671,7 +548,7 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                         </Button>
                     </Col>
                 </Row>
-                {/* Upload Progress */}
+
                 {loading && uploadProgress > 0 && (
                     <div style={{marginBottom: 20}}>
                         <Progress
@@ -683,16 +560,15 @@ ${osmotir ? `🕐 <b>Ko'rikdan o'tish:</b> ${osmotir}` : ''}
                             }}
                         />
                         <p style={{textAlign: "center", marginTop: 8, color: "#666"}}>
-                            {uploadProgress < 50 && "Rasmlar yuklanmoqda..."}
-                            {uploadProgress >= 50 && uploadProgress < 70 && "Asosiy Excel-ga yozilmoqda..."}
-                            {uploadProgress >= 70 && uploadProgress < 85 && "Rieltor Excel-iga yozilmoqda..."}
-                            {uploadProgress >= 85 && uploadProgress < 100 && "Telegram kanaliga yuborilmoqda..."}
+                            {uploadProgress < 40 && "Rasmlar yuklanmoqda..."}
+                            {uploadProgress >= 40 && uploadProgress < 65 && "GLAVNIY Excel-ga yozilmoqda..."}
+                            {uploadProgress >= 65 && uploadProgress < 90 && "Rieltor Excel-iga yozilmoqda..."}
+                            {uploadProgress >= 90 && uploadProgress < 100 && "Telegram kanaliga yuborilmoqda..."}
                             {uploadProgress === 100 && "✅ Bajarildi!"}
                         </p>
                     </div>
                 )}
 
-                {/* 📸 Rasmlar */}
                 <Form.Item label="Rasmlar" name="rasmlar">
                     <Upload.Dragger
                         multiple
