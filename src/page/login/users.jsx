@@ -5,4 +5,5 @@ export const users = [
     { username: "Doniyor", login: "Doniyor123", parol: "12345" },
     { username: "Sevinch", login: "Sevinch123", parol: "12345" },
     { username: "Ibroxim", login: "Ibroxim123", parol: "12345" },
+    { username: "Mirzobek", login: "Mirzobek123", parol: "12345" },
 ];
