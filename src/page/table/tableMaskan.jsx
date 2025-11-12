@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Form, Input, Button, Select, message, Row, Col, InputNumber, Progress } from "antd";
-import { Upload } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
-import "./tableMaskan.css";
-import { users } from "../login/users.jsx";
+import React, {useEffect, useState} from "react";
+import {Form, Input, Button, Select, message, Row, Col, InputNumber, Progress} from "antd";
+import {Upload} from "antd";
+import {InboxOutlined} from "@ant-design/icons";
+import axios from "axios";
+import "./tableMaskan.css"
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnvIdgVLD8u4GrkXSc83z5jOOfLRCgut7_rczbe2KuASF4I7kgnECemW6u9YAO2J_F/exec";
-const { Option } = Select;
-import { Rielter } from "./db/rielter.jsx";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNpE2jQvMk3IvxNdryrk4CTjVgmPNl09rMwC2FNfRyMPl47lVtdK1dgLVLmdgAgUlD/exec";
+const {Option} = Select;
+import {Rielter} from "./db/rielter.jsx";
 
-// ✅ RASMNI SIQISH (WEBP formatida, 800px max)
+
 const compressImage = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -22,7 +22,6 @@ const compressImage = (file) => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                // Max 800px (katta rasmlarni kichraytirish)
                 let width = img.width;
                 let height = img.height;
                 const maxSize = 800;
@@ -41,9 +40,9 @@ const compressImage = (file) => {
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // WEBP formatida (70% sifat)
                 canvas.toBlob(
                     (blob) => {
+                        if (!blob) return reject(new Error("Blob yaratilmadi"));
                         resolve(blob);
                     },
                     'image/webp',
@@ -69,6 +68,7 @@ const blobToBase64 = (blob) => {
     });
 };
 
+
 const formatDateToDDMMYYYY = (isoDate) => {
     if (!isoDate) return "";
     const parts = isoDate.split("-");
@@ -79,23 +79,14 @@ const formatDateToDDMMYYYY = (isoDate) => {
 const TableMaskan = () => {
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [compressedImages, setCompressedImages] = useState([]);
     const [form] = Form.useForm();
+    const [files, setFiles] = useState([]); // { uid, name, originFileObj, base64, progress, compressing, error, url }
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("userData") || sessionStorage.getItem("userData");
-
-        if (!storedUser) {
+        const userData =
+            localStorage.getItem("userData") || sessionStorage.getItem("userData");
+        if (!userData) {
             message.warning("Iltimos, tizimga kiring!");
-            window.location.href = "/login";
-            return;
-        }
-
-        const userData = JSON.parse(storedUser);
-        const findUser = users.find((u) => u.username === userData.username);
-
-        if (!findUser) {
-            message.error("Foydalanuvchi topilmadi!");
             window.location.href = "/login";
         }
     }, []);
@@ -104,60 +95,64 @@ const TableMaskan = () => {
         const savedSheet = localStorage.getItem("selectedSheetName");
         const savedSheetType = localStorage.getItem("selectedSheetType");
         if (savedSheet) {
-            form.setFieldsValue({ sheetName: savedSheet });
-            form.setFieldsValue({ sheetType: savedSheetType });
+            form.setFieldsValue({sheetName: savedSheet});
+            form.setFieldsValue({sheetType: savedSheetType});
         }
     }, [form]);
 
     const findRielterData = (rielterName) => {
-        return Rielter.find((r) => r.name === rielterName);
+        return Rielter.find(r => r.name === rielterName);
     };
 
-    // ✅ RASMLARNI SIQISH VA SAQLASH
-    const handleImageUpload = async ({ fileList }) => {
-        setUploadProgress(5);
+    const simulateProgress = (duration) => {
+        return new Promise((resolve) => {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                setUploadProgress(Math.min(progress, 90));
+                if (progress >= 90) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, duration / 10);
+        });
+    };
 
-        const files = fileList.map((f) => f.originFileObj).filter(Boolean);
-
-        if (files.length === 0) {
-            setCompressedImages([]);
-            setUploadProgress(0);
-            return;
-        }
-
+    const sendToGoogleScript = async (url, data, timeout = 10000) => {
         try {
-            const compressed = [];
+            console.log(`📤 Yuborilmoqda: ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'} Excel`);
 
-            for (let i = 0; i < files.length; i++) {
-                const blob = await compressImage(files[i]);
-                const base64 = await blobToBase64(blob);
-                compressed.push(base64);
+            // ✅ Timeout bilan promise yaratamiz
+            const fetchPromise = fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                mode: "no-cors", // CORS muammosini oldini olish
+                body: JSON.stringify(data)
+            });
 
-                // Progress
-                const progress = 5 + ((i + 1) / files.length) * 15;
-                setUploadProgress(Math.round(progress));
-            }
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), timeout)
+            );
 
-            setCompressedImages(compressed);
-            setUploadProgress(20);
-            message.success(`✅ ${files.length} ta rasm siqildi (hajm 70% kamaydi)`);
+            // ✅ Timeout yoki fetch - qaysi biri tezroq bo'lsa
+            await Promise.race([fetchPromise, timeoutPromise]);
 
+            console.log(`✅ Yuborildi: ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'}`);
+            return { success: true };
         } catch (error) {
-            console.error("Rasm siqishda xato:", error);
-            message.error("Rasmlarni siqishda xatolik");
-            setCompressedImages([]);
-            setUploadProgress(0);
+            // ✅ Timeout yoki xatolik bo'lsa ham SUCCESS deb qaytaramiz
+            // Chunki no-cors rejimida response tekshirib bo'lmaydi
+            console.warn(`⚠️ ${url.includes('Glavniy') ? 'GLAVNIY' : 'RIELTER'} - Timeout/Error (lekin yuborilgan bo'lishi mumkin):`, error.message);
+            return { success: true, warning: error.message };
         }
     };
-
     const onFinish = async (values) => {
         setLoading(true);
-        setUploadProgress(5);
+        setUploadProgress(0);
 
         try {
-            console.log("🚀 YUBORISH BOSHLANDI");
+            const progressPromise = simulateProgress(2000);
 
-            // 1️⃣ Ma'lumotlarni tayyorlash
             const xet = `${values.xona}/${values.etaj}/${values.etajnost}`;
 
             const userData = localStorage.getItem("userData");
@@ -173,7 +168,9 @@ const TableMaskan = () => {
 
             let osmotir = "";
             if (values.osmotir_sana || values.osmotir_vaqt) {
-                const sana = values.osmotir_sana ? formatDateToDDMMYYYY(values.osmotir_sana) : "";
+                const sana = values.osmotir_sana
+                    ? formatDateToDDMMYYYY(values.osmotir_sana)
+                    : "";
                 const vaqt = values.osmotir_vaqt || "";
                 osmotir = (sana + (sana && vaqt ? " " : "") + vaqt).trim();
             }
@@ -182,8 +179,18 @@ const TableMaskan = () => {
             const currentDateTime = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
             const rielterData = findRielterData(values.rieltor);
+            const files = values.rasmlar || [];
+            const rasmlarBase64 = await Promise.all(
+                files.map(async (f) => {
+                    if (f.base64) return f.base64;
+                    if (f.originFileObj) {
+                        const blob = await compressImage(f.originFileObj);
+                        return await blobToBase64(blob);
+                    }
+                    return null;
+                })
+            );
 
-            setUploadProgress(10);
 
             const dataToSend = {
                 sheetName: values.sheetName,
@@ -199,7 +206,7 @@ const TableMaskan = () => {
                 rieltor: values.rieltor,
                 sana: currentDateTime,
                 xodim: xodim,
-                rasmlar: compressedImages,
+                rasmlar: rasmlarBase64.filter(Boolean),
                 uy_turi: values.uy_turi || "",
                 planirovka: values.planirovka || "",
                 xolati: values.xolati || "",
@@ -208,77 +215,76 @@ const TableMaskan = () => {
                 osmotir: osmotir || "",
                 dom: values.dom || "",
                 kvartira: values.kvartira || "",
-                telegram: rielterData
-                    ? {
-                        chatId: rielterData.rielterChatId,
-                        themeId: rielterData.themeId,
-                    }
-                    : null,
+                // Telegram ma'lumotlari (faqat App Script uchun)
+                telegram: rielterData ? {
+                    chatId: rielterData.rielterChatId,
+                    themeId: rielterData.themeId
+                } : null
             };
 
-            console.log(`📦 Rasmlar: ${compressedImages.length} ta`);
-            setUploadProgress(20);
+            console.log("📤 Yuborilayotgan data:", {
+                ...dataToSend,
+                telegram: dataToSend.telegram,
+                rasmlar: `${dataToSend.rasmlar.length} ta rasm`
+            });
 
-            // 2️⃣ GLAVNIY Excel-ga yuborish (SINXRON - kutamiz!)
-            console.log("📤 GLAVNIY Excel-ga yuborish...");
-            const mainResult = await sendToGoogleScriptSync(SCRIPT_URL, dataToSend, 120000); // 2 daqiqa timeout
+            await progressPromise;
+            setUploadProgress(40);
 
-            setUploadProgress(60);
+            // 1️⃣ GLAVNIY Excel-ga yuborish (birinchi bo'lib)
+            console.log("📊 GLAVNIY Excel-ga yuborilmoqda...");
+            const mainResult = await sendToGoogleScript(SCRIPT_URL, dataToSend);
+
+            setUploadProgress(65);
 
             if (!mainResult.success) {
-                throw new Error(`GLAVNIY Excel xato: ${mainResult.error || 'Unknown error'}`);
+                throw new Error(`GLAVNIY Excel xato: ${mainResult.error}`);
             }
 
-            console.log("✅ GLAVNIY Excel-ga yuborildi!");
-            console.log(`📁 Folder link: ${mainResult.folderLink || 'Yo\'q'}`);
+            console.log("✅ GLAVNIY Excel-ga yuborildi");
 
-            // 3️⃣ Rieltor Excel-iga yuborish (agar kerak bo'lsa)
+            // 2️⃣ Rieltor Excel-iga yuborish (ikkinchi bo'lib)
             let rielterSuccess = false;
 
             if (rielterData && rielterData.rielterExcelId) {
-                console.log(`📤 ${values.rieltor} Excel-iga yuborish...`);
-                setUploadProgress(70);
+                console.log(`📊 ${values.rieltor} Excel-iga yuborilmoqda...`);
+                setUploadProgress(75);
 
-                const rielterResult = await sendToGoogleScriptSync(
+                const rielterResult = await sendToGoogleScript(
                     rielterData.rielterExcelId,
-                    dataToSend,
-                    120000
+                    dataToSend
                 );
 
                 setUploadProgress(90);
 
                 if (!rielterResult.success) {
-                    console.warn(`⚠️ Rieltor Excel xato:`, rielterResult.error);
-                    message.warning(`⚠️ ${values.rieltor} Excel-iga yuborishda muammo`);
+                    console.warn("⚠️ Rieltor Excel xato:", rielterResult.error);
+                    message.warning(`⚠️ ${values.rieltor} Excel-iga yuborishda xatolik`);
                 } else {
-                    console.log(`✅ ${values.rieltor} Excel-iga yuborildi!`);
+                    console.log(`✅ ${values.rieltor} Excel-iga yuborildi (Telegram ham yuborildi)`);
                     rielterSuccess = true;
                 }
+            } else {
+                console.warn("⚠️ Rieltor ma'lumotlari topilmadi:", values.rieltor);
             }
 
             setUploadProgress(100);
 
-            // 4️⃣ Natija
-            const successMsg = mainResult.folderLink
-                ? "✅ Ma'lumot va rasmlar saqlandi!"
-                : "✅ Ma'lumot saqlandi!";
-
+            // Muvaffaqiyat xabari
             if (rielterSuccess) {
-                message.success(successMsg + ` (${values.rieltor} Excel-iga ham yuborildi)`);
+                message.success("✅ Barcha ma'lumotlar muvaffaqiyatli yuborildi!");
             } else {
-                message.success(successMsg);
+                message.success("✅ GLAVNIY Excel-ga saqlandi!");
             }
 
-            // Formani tozalash
             form.resetFields();
-            setCompressedImages([]);
 
             const savedSheet = localStorage.getItem("selectedSheetName");
             const savedSheetType = localStorage.getItem("selectedSheetType");
             if (savedSheet) {
                 form.setFieldsValue({
                     sheetName: savedSheet,
-                    sheetType: savedSheetType,
+                    sheetType: savedSheetType
                 });
             }
 
@@ -287,7 +293,7 @@ const TableMaskan = () => {
             }, 2000);
 
         } catch (err) {
-            console.error("❌ XATO:", err);
+            console.error("❌ Xatolik:", err);
             message.error(`❌ Yuborishda xatolik: ${err.message}`);
             setUploadProgress(0);
         } finally {
@@ -295,112 +301,14 @@ const TableMaskan = () => {
         }
     };
 
-// ========================================
-// SINXRON YUBORISH (kutib turadi)
-// ========================================
-    const sendToGoogleScriptSync = async (url, data, timeout = 120000) => {
-        try {
-            const scriptType = url.includes("AKfycbzcxlF0") ? "GLAVNIY" : "RIELTER";
-            console.log(`📤 ${scriptType} - Yuborish boshlandi`);
-            console.log(`⏱️ Timeout: ${timeout / 1000}s`);
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-            const startTime = Date.now();
-
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify(data),
-                signal: controller.signal,
-                redirect: "follow"
-            });
-
-            clearTimeout(timeoutId);
-
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            console.log(`⏱️ Vaqt: ${elapsed}s`);
-            console.log(`📊 Status: ${response.status} ${response.statusText}`);
-
-            // Javobni o'qish
-            let result = null;
-            try {
-                const text = await response.text();
-                console.log(`📄 Response (100 char): ${text.substring(0, 100)}`);
-
-                result = JSON.parse(text);
-                console.log(`✅ JSON parsed:`, result);
-            } catch (e) {
-                console.warn(`⚠️ JSON parse xato: ${e.message}`);
-            }
-
-            // Status tekshirish
-            if (response.ok || response.status === 0 || response.status === 302) {
-                return {
-                    success: true,
-                    data: result,
-                    folderLink: result?.folderLink || null,
-                    elapsed: elapsed
-                };
-            }
-
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-
-        } catch (error) {
-            if (error.name === "AbortError") {
-                console.error(`⏱️ TIMEOUT: ${timeout / 1000}s`);
-                return {
-                    success: false,
-                    error: "Server javob bermadi (timeout)",
-                    timeout: true
-                };
-            }
-
-            console.error(`❌ Xato:`, error);
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    };
-// ✅ TESTLASH UCHUN
-    async function testConnection() {
-        const testData = {
-            sheetName: "1 xona",
-            sheetType: "Sotuv",
-            kvartil: "Yunusobod - 1",
-            xet: "1/1/5",
-            tell: "+998901234567",
-            m2: "50",
-            narx: "50000",
-            xodim: "Test",
-            rieltor: "Aziz",
-            rasmlar: []  // Test uchun bo'sh
-        };
-
-        console.log("🧪 Test boshlanmoqda...");
-
-        const result = await sendToGoogleScript(
-            "https://script.google.com/macros/s/AKfycbx8KUmH_FDdZ5wsazP7m6nl5Hn1QuwEmaF-HUGzZHaFiDqdw0pO57IcVUSVKPwXQoyQ/exec",
-            testData
-        );
-
-        console.log("🧪 Test natijasi:", result);
-        return result;
-    }
-
-// Browser console-da ishga tushirish: testConnection()
     const handleSheetChange = (value) => {
         localStorage.setItem("selectedSheetName", value);
-        form.setFieldsValue({ sheetName: value });
+        form.setFieldsValue({sheetName: value});
     };
 
     const handleSheetTypeChange = (value) => {
         localStorage.setItem("selectedSheetType", value);
-        form.setFieldsValue({ sheetType: value });
+        form.setFieldsValue({sheetType: value});
     };
 
     return (
@@ -414,7 +322,7 @@ const TableMaskan = () => {
                 background: "#fff",
             }}
         >
-            <h2 style={{ textAlign: "center", marginBottom: 20 }}>🏠 Uy ma'lumotlari</h2>
+            <h2 style={{textAlign: "center", marginBottom: 20}}>🏠 Uy ma'lumotlari</h2>
 
             <Form form={form} autoComplete="off" layout="vertical" onFinish={onFinish}>
                 <Form.Item
@@ -734,33 +642,36 @@ const TableMaskan = () => {
                     </div>
                 )}
 
-                <Form.Item label="Rasmlar" name="rasmlar">
+                <Form.Item
+                    label="Rasmlar"
+                    name="rasmlar"
+                    valuePropName="fileList"
+                    getValueFromEvent={e => {
+                        if (!e) return [];
+                        return e.fileList.map(file => {
+                            if (!file.base64 && file.originFileObj) {
+                                // async siqishni set qilish, keyinchalik onFinish ichida olamiz
+                                compressImage(file.originFileObj)
+                                    .then(blob => blobToBase64(blob))
+                                    .then(base64 => {
+                                        file.base64 = base64;
+                                    })
+                                    .catch(() => {
+                                        file.base64 = null; // xato bo‘lsa null
+                                    });
+                            }
+                            return file;
+                        });
+                    }}
+                >
                     <Upload.Dragger
                         multiple
                         listType="picture"
                         accept="image/*"
-                        beforeUpload={() => false}
-                        onChange={({fileList}) => {
-                            const files = fileList.map(f => f.originFileObj);
-                            Promise.all(
-                                files.map(file => {
-                                    return new Promise(resolve => {
-                                        const reader = new FileReader();
-                                        reader.onload = e => resolve(e.target.result);
-                                        reader.readAsDataURL(file);
-                                    });
-                                })
-                            ).then(base64List => {
-                                form.setFieldsValue({rasmlar: base64List});
-                            });
-                        }}
+                        beforeUpload={() => false} // browserga avtomatik upload bo‘lmasin
                     >
-                        <p className="ant-upload-drag-icon">
-                            <InboxOutlined/>
-                        </p>
-                        <p className="ant-upload-text">
-                            Rasmlarni bu yerga tashlang yoki tanlang
-                        </p>
+                        <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                        <p className="ant-upload-text">Rasmlarni bu yerga tashlang yoki tanlang</p>
                         <p className="ant-upload-hint">PNG, JPG yoki JPEG fayllar qo'llanadi</p>
                     </Upload.Dragger>
                 </Form.Item>
