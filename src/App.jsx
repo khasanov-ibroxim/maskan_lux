@@ -4,6 +4,7 @@ import Sell from "./page/sell/sell.jsx";
 import TableMaskan from "./page/table/tableMaskan.jsx";
 import Login from "./page/login/login.jsx";
 
+
 const App = () => {
     useEffect(() => {
         const preventGesture = (e) => e.preventDefault();

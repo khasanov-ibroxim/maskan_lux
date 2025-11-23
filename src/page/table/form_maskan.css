@@ -1,3 +1,8 @@
+.form_maskan{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 /* TableMaskan.css yoki global CSS */
 
 /* konteyner uchun input styling */
