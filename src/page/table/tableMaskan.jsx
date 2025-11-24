@@ -3,7 +3,7 @@ import {Form, Input, Button, Select, message, Row, Col, InputNumber, Progress} f
 import {Upload} from "antd";
 import {InboxOutlined} from "@ant-design/icons";
 import axios from "axios";
-import "../../../../maskan_v2/client/src/page/form_maskan/form_maskan.css"
+import "./form_maskan.css"
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNpE2jQvMk3IvxNdryrk4CTjVgmPNl09rMwC2FNfRyMPl47lVtdK1dgLVLmdgAgUlD/exec";
 const {Option} = Select;
