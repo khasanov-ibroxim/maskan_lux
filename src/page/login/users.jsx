@@ -6,4 +6,8 @@ export const users = [
     { username: "Sevinch", login: "Sevinch123", parol: "12345" },
     { username: "Ibroxim", login: "Ibroxim123", parol: "12345" },
     { username: "Fazliddin", login: "Fazliddin123", parol: "12345" },
+    { username: "Kozim", login: "Kozim123", parol: "12345" },
+    { username: "Fayzulloh", login: "Fayzulloh123", parol: "12345" },
+    { username: "Abdulloh", login: "Abdulloh123", parol: "12345" },
+    { username: "Jahongir", login: "Jahongir123", parol: "12345" },
 ];
